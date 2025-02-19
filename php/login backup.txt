@@ -1,0 +1,126 @@
+<?php
+session_start();
+
+// Debugging: Check if session already exists
+if (isset($_SESSION['username'])) {
+    header("Location: ../dashboard/dashboard.php"); // Redirect if already logged in
+    exit();
+}
+
+$error = "";
+
+// Handle login form submission
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $username = trim($_POST["username"]);
+    $password = trim($_POST["password"]);
+
+    if (!empty($username) && !empty($password)) {
+        // Check user credentials from users.txt
+        $file = fopen("users.txt", "r");
+        $is_valid = false;
+
+        while (($line = fgets($file)) !== false) {
+            list($stored_username, $stored_hash) = explode("|", trim($line));
+
+            if ($username === $stored_username && password_verify($password, $stored_hash)) {
+                fclose($file);
+                
+                // Start user session
+                session_start();
+                session_regenerate_id(true); // Prevent session fixation
+                $_SESSION["username"] = $username;
+
+                header("Location: ../dashboard/dashboard.php");
+                exit();
+            }
+        }
+        fclose($file);
+        $error = "Invalid username or password.";
+    } else {
+        $error = "Please enter both username and password.";
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css?family=Open+Sans&display=swap');
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background: #f9faff;
+            color: #3a3c47;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            margin-top: 48px;
+        }
+        form {
+            background: #fff;
+            max-width: 360px;
+            width: 100%;
+            padding: 40px;
+            border: 1px solid #e1e2f0;
+            border-radius: 4px;
+            box-shadow: 0 0 5px 0 rgba(42, 45, 48, 0.12);
+        }
+        .row {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+        }
+        .row label {
+            font-size: 13px;
+            color: #8086a9;
+        }
+        .row input {
+            flex: 1;
+            padding: 13px;
+            border: 1px solid #d6d8e6;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            font-size: 18px;
+            background: #15C39A;
+            color: #fff;
+            border: none;
+            border-radius: 100px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        button:hover {
+            background: #55D3AC;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Login</h1>
+
+<?php if (!empty($error)) { echo "<p style='color:red'>$error</p>"; } ?>
+
+<form action="" method="POST">
+    <div class="row">
+        <label for="username">Username</label>
+        <input type="text" name="username" autocomplete="off" required>
+    </div>
+    <div class="row">
+        <label for="password">Password</label>
+        <input type="password" name="password" required>
+    </div>
+    <button type="submit">Login</button>
+</form>
+
+</body>
+</html>
